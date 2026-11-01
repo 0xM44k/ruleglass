@@ -10,7 +10,7 @@ ruleglass analyze rules.v4 --format sarif > ruleglass.sarif   # GitHub code scan
 ruleglass diff rules.old rules.new --fail-on opened            # what does the change newly allow or block?
 ```
 
-Try it: `PYTHONPATH=src python -m ruleglass trace examples/web-host.rules --proto tcp --src 203.0.113.9 --dport 8080 --in eth0`
+Try it: `PYTHONPATH=src python -m ruleglass trace examples/web-host.rules --proto tcp --src 192.0.2.5 --dport 9000 --in eth0 --state NEW` (ACCEPT, via the `ADMIN` chain). Port 8080 on the same file answers `UNCERTAIN`, because that rule uses `-m limit`, which ruleglass will not guess.
 
 ## What makes the answers trustworthy (or not)
 
@@ -60,7 +60,7 @@ Not done yet, in rough order of value:
 
 ## Development
 
-`python -m unittest discover -s tests` (39 tests; mutating the negation logic makes them fail). Kernel differential test (Linux, root, iptables): `python3 tools/kernel_diff.py --rulesets 60 --seed 1` (re-run 2026-11-01 with `--rulesets 20 --seed 3`: 128 definite verdicts agreed with the kernel, 0 disagreed).
+`python -m unittest discover -s tests` (39 tests; mutating the negation logic makes them fail). Example-file check against the real kernel (Linux, root, `pip install pyroute2`): `python3 tools/kernel_example.py` opens real TCP connections from three source addresses to seven ports and compares each result with `ruleglass trace` (run 2026-11-01: 21 packets, 18 definite verdicts all agreed, 3 `UNCERTAIN` where the kernel accepted, 0 mismatches). Kernel differential test (Linux, root, iptables): `python3 tools/kernel_diff.py --rulesets 60 --seed 1` (re-run 2026-11-01 with `--rulesets 20 --seed 3`: 128 definite verdicts agreed with the kernel, 0 disagreed).
 
 Not yet independently reviewed; the tests and documented limits describe what has been checked. MIT licence.
 
@@ -70,4 +70,4 @@ Designed and built by Maak — https://github.com/0xM44k
 
 ![Terminal output captured in this session](docs/evidence-terminal.png)
 
-The image above is a capture of the command shown at the top of the image, run against the files in this repository on 2026-11-01. It is the tool's actual output, rendered in a terminal panel for legibility; no output lines were invented.
+The image shows two traces from the commands at the top, then the output of `tools/kernel_example.py`, which sends real packets through the Linux kernel in a throw-away namespace and compares the kernel's verdict with ruleglass's. Captured against the files in this repository on 2026-11-01; it is the tools' actual output rendered in a terminal panel, with no lines invented.
